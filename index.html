@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TalkNest – বাংলা চ্যাট</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-bg">
+    <div class="bubble b1"></div>
+    <div class="bubble b2"></div>
+    <div class="bubble b3"></div>
+  </div>
+  <div class="auth-card">
+    <div class="logo">
+      <span class="logo-icon">💬</span>
+      <h1>TalkNest</h1>
+      <p>বাংলাদেশের নিজের চ্যাট অ্যাপ</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="auth-tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">লগইন</button>
+      <button class="tab-btn" onclick="switchTab('register')">রেজিস্ট্রেশন</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-form" class="auth-form active">
+      <div class="input-group">
+        <label>ইমেইল</label>
+        <input type="email" id="login-email" placeholder="আপনার ইমেইল লিখুন"/>
+      </div>
+      <div class="input-group">
+        <label>পাসওয়ার্ড</label>
+        <input type="password" id="login-password" placeholder="পাসওয়ার্ড লিখুন"/>
+      </div>
+      <button class="btn-primary" onclick="loginUser()">লগইন করুন</button>
+      <button class="btn-google" onclick="googleLogin()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"/> Google দিয়ে লগইন
+      </button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="register-form" class="auth-form">
+      <div class="input-group">
+        <label>আপনার নাম</label>
+        <input type="text" id="reg-name" placeholder="পুরো নাম লিখুন"/>
+      </div>
+      <div class="input-group">
+        <label>ইউজারনেম <span class="hint">(ইউনিক আইডি)</span></label>
+        <div class="username-wrap">
+          <span class="at-sign">@</span>
+          <input type="text" id="reg-username" placeholder="username" oninput="checkUsername()"/>
+          <span id="username-status" class="u-status"></span>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>ইমেইল</label>
+        <input type="email" id="reg-email" placeholder="আপনার ইমেইল"/>
+      </div>
+      <div class="input-group">
+        <label>মোবাইল নম্বর <span class="hint">(ঐচ্ছিক)</span></label>
+        <div class="phone-wrap">
+          <span class="phone-code">🇧🇩 +880</span>
+          <input type="tel" id="reg-phone" placeholder="01XXXXXXXXX" maxlength="11"/>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>পাসওয়ার্ড</label>
+        <input type="password" id="reg-password" placeholder="কমপক্ষে ৬ অক্ষর"/>
+      </div>
+      <button class="btn-primary" onclick="registerUser()">অ্যাকাউন্ট তৈরি করুন</button>
+      <button class="btn-google" onclick="googleLogin()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"/> Google দিয়ে রেজিস্ট্রেশন
+      </button>
+    </div>
+
+    <div id="auth-error" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app-screen" class="screen">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="my-avatar" id="my-avatar-sidebar">
+        <img id="sidebar-avatar-img" src="" alt=""/>
+        <span class="online-dot"></span>
+      </div>
+      <div class="my-info">
+        <h3 id="sidebar-name">লোড হচ্ছে...</h3>
+        <span id="sidebar-uid" class="uid-tag">@---</span>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" onclick="showNewChat()" title="নতুন চ্যাট">✏️</button>
+        <button class="icon-btn" onclick="showProfile()" title="প্রোফাইল">⚙️</button>
+        <button class="icon-btn" onclick="logoutUser()" title="লগআউট">🚪</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="🔍 নাম বা @username খুঁজুন" oninput="searchUsers()"/>
+    </div>
+
+    <!-- Tabs: Chats / Groups -->
+    <div class="conv-tabs">
+      <button class="conv-tab active" onclick="switchConvTab('chats')">💬 চ্যাট</button>
+      <button class="conv-tab" onclick="switchConvTab('groups')">👥 গ্রুপ</button>
+    </div>
+
+    <!-- Conversation List -->
+    <div id="conversations-list" class="conversations"></div>
+    <!-- Search Results -->
+    <div id="search-results" class="search-results hidden"></div>
+  </aside>
+
+  <!-- CHAT AREA -->
+  <main class="chat-main" id="chat-main">
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">💬</div>
+      <h2>TalkNest-এ স্বাগতম!</h2>
+      <p>বাম দিক থেকে একটি চ্যাট সিলেক্ট করুন<br/>অথবা নতুন চ্যাট শুরু করুন</p>
+      <button class="btn-primary" onclick="showNewChat()">নতুন চ্যাট শুরু করুন</button>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="chat-window hidden">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <button class="back-btn" onclick="closeChat()">←</button>
+        <div class="chat-peer-info">
+          <div class="peer-avatar-wrap">
+            <img id="peer-avatar" src="" alt=""/>
+            <span id="peer-online-dot" class="online-dot"></span>
+          </div>
+          <div>
+            <h3 id="peer-name">---</h3>
+            <span id="peer-status" class="status-text">অফলাইন</span>
+          </div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="icon-btn" onclick="toggleInfo()" title="তথ্য">ℹ️</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages-container" class="messages-container">
+        <div id="messages-list" class="messages-list"></div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div id="typing-indicator" class="typing-indicator hidden">
+        <span></span><span></span><span></span>
+        <p id="typing-text">টাইপ করছে...</p>
+      </div>
+
+      <!-- Input Area -->
+      <div class="message-input-area">
+        <label class="attach-btn" for="file-input" title="ফাইল/ছবি">📎</label>
+        <input type="file" id="file-input" accept="image/*,video/*,.pdf,.doc,.docx" style="display:none" onchange="handleFileSelect()"/>
+        <div id="file-preview" class="file-preview hidden"></div>
+        <input type="text" id="message-input" placeholder="মেসেজ লিখুন..." 
+          oninput="handleTyping()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"/>
+        <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+
+      <!-- Emoji Picker (simple) -->
+      <div id="emoji-picker" class="emoji-picker hidden">
+        😊 😂 ❤️ 😍 🥰 😎 😢 😡 👍 👎 🙏 🎉 🔥 💯 😴 🤔 😱 🥳 💪 🎶
+        <br/>
+        🌹 🌸 🦋 🌟 ⭐ 🌙 ☀️ 🌈 🍕 🍰 ☕ 🎮 📱 💻 🚀 🎯 💡 📚 🎵 🏆
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- New Chat Modal -->
+<div id="new-chat-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>নতুন চ্যাট</h3>
+      <button onclick="closeModal('new-chat-modal')">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchModalTab('direct')">ব্যক্তিগত চ্যাট</button>
+      <button class="modal-tab" onclick="switchModalTab('group')">গ্রুপ তৈরি</button>
+    </div>
+
+    <div id="direct-chat-panel" class="modal-panel active">
+      <input type="text" id="find-user-input" placeholder="@username দিয়ে খুঁজুন" oninput="findUserByUsername()"/>
+      <div id="find-user-results" class="find-results"></div>
+    </div>
+
+    <div id="group-chat-panel" class="modal-panel">
+      <input type="text" id="group-name-input" placeholder="গ্রুপের নাম লিখুন"/>
+      <input type="text" id="group-find-input" placeholder="মেম্বার যোগ করুন (@username)" oninput="findGroupMember()"/>
+      <div id="group-members-preview" class="members-preview"></div>
+      <div id="group-find-results" class="find-results"></div>
+      <button class="btn-primary" onclick="createGroup()" style="margin-top:12px">গ্রুপ তৈরি করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profile-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>প্রোফাইল সেটিংস</h3>
+      <button onclick="closeModal('profile-modal')">✕</button>
+    </div>
+    <div class="profile-edit">
+      <div class="profile-avatar-section">
+        <div class="profile-avatar-wrap">
+          <img id="profile-avatar-img" src="" alt=""/>
+          <label class="avatar-change-btn" for="avatar-input">📷</label>
+          <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()"/>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>নাম পরিবর্তন করুন</label>
+        <input type="text" id="edit-name" placeholder="আপনার নাম"/>
+      </div>
+      <div class="input-group">
+        <label>মোবাইল নম্বর</label>
+        <div class="phone-wrap">
+          <span class="phone-code">🇧🇩 +880</span>
+          <input type="tel" id="edit-phone" placeholder="01XXXXXXXXX" maxlength="11"/>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>বায়ো</label>
+        <input type="text" id="edit-bio" placeholder="নিজের সম্পর্কে কিছু লিখুন..."/>
+      </div>
+      <div class="input-group">
+        <label>আপনার ইউনিক ID</label>
+        <div class="uid-display" id="profile-uid-display">@---</div>
+      </div>
+      <button class="btn-primary" onclick="updateProfile()">সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Profile Modal -->
+<div id="user-profile-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>প্রোফাইল</h3>
+      <button onclick="closeModal('user-profile-modal')">✕</button>
+    </div>
+    <div class="user-profile-view">
+      <div class="up-avatar-wrap">
+        <img id="up-avatar" src="" alt=""/>
+        <span id="up-status" class="up-status">⚫ অফলাইন</span>
+      </div>
+      <h2 id="up-name" class="up-name">---</h2>
+      <div id="up-uid" class="up-uid">@---</div>
+      <div id="up-phone" class="up-info-row">📞 ---</div>
+      <div id="up-bio" class="up-info-row up-bio">---</div>
+      <button class="btn-primary up-msg-btn" id="up-msg-btn" onclick="openChatFromProfile()">
+        💬 মেসেজ পাঠান
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Loading Overlay -->
+<div id="loading" class="loading-overlay hidden">
+  <div class="spinner"></div>
+  <p>লোড হচ্ছে...</p>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
